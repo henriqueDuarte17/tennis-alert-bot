@@ -2,6 +2,7 @@ import time
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from datetime import datetime
+from zoneinfo import ZoneInfo  # <-- Importante para usar a hora de Portugal
 from src.storage.database import init_db, alert_was_sent, mark_alert_as_sent
 from src.telegram.bot import send_telegram_message
 from src.alerts.formatter import format_mto_alert, format_upset_alert
@@ -9,12 +10,12 @@ from src.detectors.mto_detector import check_for_mto
 from src.detectors.upset_detector import check_for_first_set_upset
 from src.data_sources.flashscore_client import fetch_live_tennis_matches
 
-# --- MINI SERVIDOR WEB (Para o Render manter o plano gratuito ativo) ---
+# --- MINI SERVIDOR WEB ---
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Bot is alive and running!")
+        self.wfile.write(b"Tennis Alert Bot is alive and running!")
 
 def run_web_server():
     server = HTTPServer(('0.0.0.0', 10000), SimpleHandler)
@@ -26,20 +27,22 @@ def run_bot_loop():
     init_db()
     
     check_interval = 480  # 8 minutos
-    start_hour = 10       # Início às 10:00
-    end_hour = 23         # Fim às 23:00
+    start_hour = 10       # Início às 10:00 (Hora de Portugal)
+    end_hour = 23         # Fim às 23:00 (Hora de Portugal)
     
     try:
         while True:
-            hora_atual = datetime.now().hour
+            # Obtém a hora exata em Portugal (Lisboa), ignorando o fuso horário do servidor
+            hora_atual = datetime.now(ZoneInfo("Europe/Lisbon")).hour
             
+            # Valida se estamos dentro do horário ativo em Portugal
             if not (start_hour <= hora_atual < end_hour):
-                print(f"[{time.strftime('%H:%M:%S')}] Fora do horário ativo ({start_hour}h às {end_hour}h). Em repouso...")
+                print(f"[{time.strftime('%H:%M:%S')}] Fora do horário ativo em PT ({start_hour}h às {end_hour}h). Em repouso...")
                 time.sleep(1800)  # Dorme 30 minutos
                 continue
 
-            current_time = time.strftime('%Y-%m-%d %H:%M:%S')
-            print(f"\n[{current_time}] A procurar jogos ao vivo...")
+            current_time = datetime.now(ZoneInfo("Europe/Lisbon")).strftime('%Y-%m-%d %H:%M:%S')
+            print(f"\n[{current_time} PT] A procurar jogos ao vivo...")
             
             matches = fetch_live_tennis_matches()
             
@@ -78,12 +81,9 @@ def run_bot_loop():
             time.sleep(check_interval)
             
     except KeyboardInterrupt:
-        print("\n[BOT] Interrupção manual detetada (Ctrl+C). A encerrar o bot de forma segura.")
+        print("\n[BOT] Interrupção manual detetada.")
 
 if __name__ == "__main__":
-    # Inicia o servidor web numa thread separada para o Render não se queixar
     server_thread = threading.Thread(target=run_web_server, daemon=True)
     server_thread.start()
-    
-    # Arranca o bot principal
     run_bot_loop()
