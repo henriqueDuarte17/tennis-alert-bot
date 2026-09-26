@@ -1,0 +1,22 @@
+{
+  "match_id": "CH_FIXTURE_001",
+  "tournament": "ATP Challenger Oeiras",
+  "player1": "João Silva",
+  "player2": "Carlos Santos",
+  "current_set": 1,
+  "score_summary": "4-6",
+  "set1_finished": true,
+  "set1_p1": 4,
+  "set1_p2": 6,
+  "incidents": [
+    {
+      "text": "Physio enters the court to treat the player João Silva for a right leg issue."
+    }
+  ],
+  "odds": {
+    "favorite": "João Silva",
+    "underdog": "Carlos Santos",
+    "odds_favorite": 1.25,
+    "odds_underdog": 3.80
+  }
+}
