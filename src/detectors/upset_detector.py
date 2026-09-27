@@ -1,7 +1,7 @@
 def check_for_first_set_upset(match, odds_data):
     """
     Verifica se houve um upset no 1.º set para super favoritos.
-    Critério: O favorito tinha uma odd máxima de 1.25 e perdeu o 1.º set.
+    Critério: O favorito tinha uma odd máxima de 1.30 e perdeu o 1.º set.
     """
     set1_finished = match.get("set1_finished", False)
     if not set1_finished:
@@ -17,11 +17,11 @@ def check_for_first_set_upset(match, odds_data):
     favorite = odds_data.get("favorite", player1)
     underdog = odds_data.get("underdog", player2)
     
-    # DEFINIR LIMITE DE SUPER FAVORITO (odd máxima de 1.25)
-    MAX_FAV_ODD = 1.25
+    # DEFINIR LIMITE DE SUPER FAVORITO (odd máxima de 1.30)
+    MAX_FAV_ODD = 1.30
     
     if odds_fav > MAX_FAV_ODD:
-        return False, None, None # O favorito tinha uma odd superior a 1.25, ignorar
+        return False, None, None # O favorito tinha uma odd superior a 1.30, ignorar
         
     # Verificar quem ganhou o 1.º set
     winner_set1 = player1 if p1_score > p2_score else player2

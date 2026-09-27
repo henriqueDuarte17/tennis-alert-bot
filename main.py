@@ -42,41 +42,43 @@ def run_bot_loop():
                 continue
 
             current_time = datetime.now(ZoneInfo("Europe/Lisbon")).strftime('%Y-%m-%d %H:%M:%S')
-            print(f"\n[{current_time} PT] A procurar jogos ao vivo...")
+            
+            # Log explícito do ciclo para aparecer bem claro no Render
+            print(f"\n[BOT] [{current_time} PT] A iniciar ronda de verificação na Live Tennis API...")
             
             # Vai buscar os jogos à fonte de dados
             matches = fetch_live_tennis_matches()
             
             if not matches:
                 print("Nenhum jogo ativo ou dados disponíveis neste ciclo.")
-            
-            for match in matches:
-                match_id = match.get("match_id")
-                odds_data = match.get("odds", {})
-                
-                # 1. Verificar Medical Timeout (MTO)
-                mto_detected, player_affected = check_for_mto(match)
-                if mto_detected:
-                    alert_type = "MTO"
-                    if not alert_was_sent(match_id, alert_type):
-                        print(f"[ALERTA] MTO detetado para {player_affected} (Jogo: {match_id})")
-                        msg = format_mto_alert(match, player_affected)
-                        if send_telegram_message(msg):
-                            mark_alert_as_sent(match_id, alert_type, f"MTO: {player_affected}")
-                
-                # 2. Verificar Upset no 1.º Set
-                upset_detected, winner, favorite = check_for_first_set_upset(match, odds_data)
-                if upset_detected:
-                    alert_type = "UPSET_SET_1"
-                    if not alert_was_sent(match_id, alert_type):
-                        print(f"[ALERTA] Upset detetado! {winner} venceu o 1.º set (Favorito era: {favorite})")
-                        msg = format_upset_alert(
-                            match, winner, favorite,
-                            odds_data.get("odds_favorite", 1.3),
-                            odds_data.get("odds_underdog", 3.5)
-                        )
-                        if send_telegram_message(msg):
-                            mark_alert_as_sent(match_id, alert_type, f"Upset set 1: {winner}")
+            else:
+                for match in matches:
+                    match_id = match.get("match_id")
+                    odds_data = match.get("odds", {})
+                    
+                    # 1. Verificar Medical Timeout (MTO)
+                    mto_detected, player_affected = check_for_mto(match)
+                    if mto_detected:
+                        alert_type = "MTO"
+                        if not alert_was_sent(match_id, alert_type):
+                            print(f"[ALERTA] MTO detetado para {player_affected} (Jogo: {match_id})")
+                            msg = format_mto_alert(match, player_affected)
+                            if send_telegram_message(msg):
+                                mark_alert_as_sent(match_id, alert_type, f"MTO: {player_affected}")
+                    
+                    # 2. Verificar Upset no 1.º Set
+                    upset_detected, winner, favorite = check_for_first_set_upset(match, odds_data)
+                    if upset_detected:
+                        alert_type = "UPSET_SET_1"
+                        if not alert_was_sent(match_id, alert_type):
+                            print(f"[ALERTA] Upset detetado! {winner} venceu o 1.º set (Favorito era: {favorite})")
+                            msg = format_upset_alert(
+                                match, winner, favorite,
+                                odds_data.get("odds_favorite", 1.3),
+                                odds_data.get("odds_underdog", 3.5)
+                            )
+                            if send_telegram_message(msg):
+                                mark_alert_as_sent(match_id, alert_type, f"Upset set 1: {winner}")
             
             print(f"Ciclo concluído. A aguardar 8 minutos para a próxima verificação...")
             time.sleep(check_interval)
