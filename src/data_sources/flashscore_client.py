@@ -9,10 +9,9 @@ def fetch_live_tennis_matches():
             live_list = client.list_matches(status="live")
             
             for item in live_list:
-                # DEBUG TOTAL: Imprime todos os atributos e métodos disponíveis no objeto da API
-                print(f"[API INSPECT] Atributos disponíveis no item: {dir(item)}", flush=True)
-                if hasattr(item, "odds"):
-                    print(f"[API INSPECT] Objeto odds bruto: {item.odds} (tipo: {type(item.odds)})", flush=True)
+                # Inspecionar o conteúdo de market e raw para ver onde estão as odds
+                print(f"[API INSPECT] market: {getattr(item, 'market', None)}", flush=True)
+                print(f"[API INSPECT] raw: {getattr(item, 'raw', None)}", flush=True)
                 
                 match_id = str(getattr(item, "match_id", "unknown"))
                 tournament = getattr(item, "tournament", "Torneio Ténis")
@@ -32,11 +31,9 @@ def fetch_live_tennis_matches():
                 if sets_data and len(sets_data) > 0:
                     set1_p1 = getattr(sets_data[0], "p1", 0)
                     set1_p2 = getattr(sets_data[0], "p2", 0)
-                    # Consideramos o 1.º set terminado se houver jogos suficientes (ex: 6-x ou 7-x)
                     if (set1_p1 >= 6 or set1_p2 >= 6) and abs(set1_p1 - set1_p2) >= 1:
                         set1_finished = True
 
-                # Vamos apenas devolver um dummy para ver os logs do inspect
                 formatted_match = {
                     "match_id": match_id,
                     "tournament": tournament,
@@ -56,7 +53,7 @@ def fetch_live_tennis_matches():
                     }
                 }
                 matches.append(formatted_match)
-                break # Apenas inspecionamos o primeiro jogo para não inundar os logs
+                break # Apenas inspecionamos o primeiro jogo
                 
         return matches
 
