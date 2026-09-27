@@ -9,9 +9,10 @@ def fetch_live_tennis_matches():
             live_list = client.list_matches(status="live")
             
             for item in live_list:
-                # Inspecionar o conteúdo de market e raw para ver onde estão as odds
-                print(f"[API INSPECT] market: {getattr(item, 'market', None)}", flush=True)
-                print(f"[API INSPECT] raw: {getattr(item, 'raw', None)}", flush=True)
+                # Inspecionar a chave 'market' dentro do dicionário raw
+                raw_dict = getattr(item, "raw", {})
+                if isinstance(raw_dict, dict):
+                    print(f"[API INSPECT] raw['market']: {raw_dict.get('market', 'Chave market nao encontrada')}", flush=True)
                 
                 match_id = str(getattr(item, "match_id", "unknown"))
                 tournament = getattr(item, "tournament", "Torneio Ténis")
