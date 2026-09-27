@@ -1,10 +1,8 @@
 def check_for_first_set_upset(match, odds_data):
     """
-    Verifica se houve um upset no 1.º set para super favoritos.
-    Critério: O favorito tinha uma odd máxima de 1.30 e perdeu o 1.º set.
+    Verifica se houve um upset no 1.º set baseado na diferença de Ranking (Super-Favorito).
+    Critério: O favorito por ranking (posição muito superior) perdeu o 1.º set.
     """
-    print(f"[DEBUG] A analisar jogo ID {match.get('match_id')}: match={match}, odds_data={odds_data}", flush=True)
-
     set1_finished = match.get("set1_finished", False)
     if not set1_finished:
         return False, None, None
@@ -14,23 +12,36 @@ def check_for_first_set_upset(match, odds_data):
     
     player1 = match.get("player1")
     player2 = match.get("player2")
+    rank1 = match.get("rank1", 9999)
+    rank2 = match.get("rank2", 9999)
     
-    odds_fav = odds_data.get("odds_favorite", 1.40)
-    favorite = odds_data.get("favorite", player1)
-    underdog = odds_data.get("underdog", player2)
-    
-    print(f"[DEBUG] odds_fav={odds_fav}, favorite={favorite}, p1={p1_score}, p2={p2_score}", flush=True)
-
-    # DEFINIR LIMITE DE SUPER FAVORITO (odd máxima de 1.30)
-    MAX_FAV_ODD = 1.30
-    
-    if odds_fav > MAX_FAV_ODD:
-        return False, None, None # O favorito tinha uma odd superior a 1.30, ignorar
+    # Se ambos não tiverem ranking conhecido, ignoramos
+    if rank1 == 9999 and rank2 == 9999:
+        return False, None, None
         
-    # Verificar quem ganhou o 1.º set
+    # Determinar quem é o super-favorito pelo ranking
+    if rank1 < rank2:
+        favorite = player1
+        underdog = player2
+        fav_rank = rank1
+        und_rank = rank2
+    else:
+        favorite = player2
+        underdog = player1
+        fav_rank = rank2
+        und_rank = rank1
+        
+    # CRITÉRIO DE SUPER-FAVORITO POR RANKING:
+    # O favorito tem de ter um bom ranking (ex: <= 300) e a diferença para o adversário tem de ser grande (ex: >= 300 posições)
+    rank_diff = und_rank - fav_rank
+    is_super_favorite = (fav_rank <= 300 and rank_diff >= 300) or (fav_rank <= 100 and rank_diff >= 150)
+    
+    if not is_super_favorite:
+        return False, None, None
+        
+    # Se o super-favorito PERDEU o 1.º set, temos um upset!
     winner_set1 = player1 if p1_score > p2_score else player2
     
-    # Se o vencedor do set NÃO foi o favorito, temos um upset de um super favorito!
     if winner_set1 != favorite:
         return True, winner_set1, favorite
         
