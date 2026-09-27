@@ -3,6 +3,10 @@ from livetennisapi import LiveTennisAPI
 API_KEY = "twjp_d0426f3915422fc340b35cab0bbaa7d9"
 
 def fetch_live_tennis_matches():
+    """
+    Recupera os jogos de ténis ao vivo, extraindo os rankings oficiais dos jogadores
+    e o estado/placar do 1.º set.
+    """
     try:
         matches = []
         with LiveTennisAPI(api_key=API_KEY) as client:
@@ -22,7 +26,7 @@ def fetch_live_tennis_matches():
                 rank1 = int(getattr(p1_obj, "ranking", 9999) or 9999)
                 rank2 = int(getattr(p2_obj, "ranking", 9999) or 9999)
                 
-                # DIAGNÓSTICO: Imprimir os rankings na consola do Render para validação
+                # Diagnóstico de rankings nos logs
                 print(f"[RANK INSPECT] {player1} (Rank: {rank1}) vs {player2} (Rank: {rank2}) [Torneio: {tournament}]", flush=True)
                 
                 score_obj = getattr(item, "score", None)
@@ -34,9 +38,13 @@ def fetch_live_tennis_matches():
                 if sets_data and len(sets_data) > 0:
                     set1_p1 = getattr(sets_data[0], "p1", 0)
                     set1_p2 = getattr(sets_data[0], "p2", 0)
+                    
                     # O 1.º set está terminado se alguém chegou a 6 ou 7 com vantagem
                     if (set1_p1 >= 6 or set1_p2 >= 6) and abs(set1_p1 - set1_p2) >= 1:
                         set1_finished = True
+
+                # Diagnóstico do 1.º set nos logs
+                print(f"[SET1 INSPECT] {player1} vs {player2} | Placar Set 1: [{set1_p1} - {set1_p2}] | Terminado: {set1_finished} | Sets: {sets_data}", flush=True)
 
                 formatted_match = {
                     "match_id": match_id,

@@ -1,6 +1,6 @@
 def check_for_first_set_upset(match, odds_data):
     """
-    Verifica se houve um upset no 1.º set baseado na tabela de diferenças de Ranking:
+    Verifica se houve um upset no 1.º set baseado na tabela personalizada de diferenças de Ranking:
     - Top 100: diferença >= 100 posições
     - Rank 101 a 200: diferença >= 150 posições
     - Rank > 200: diferença >= 200 posições
@@ -35,7 +35,7 @@ def check_for_first_set_upset(match, odds_data):
         
     rank_diff = und_rank - fav_rank
     
-    # APLICAR A SUA TABELA DE CRITÉRIOS DE SUPER-FAVORITO:
+    # Aplicar a tabela de critérios personalizada
     is_super_favorite = False
     
     if fav_rank <= 100:
