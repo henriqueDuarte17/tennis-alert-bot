@@ -34,6 +34,8 @@ def run_bot_loop():
     
     try:
         while True:
+            loop_start_time = time.time()
+            
             # Valida a hora atual rigorosamente em Portugal (Lisboa)
             hora_atual = datetime.now(ZoneInfo("Europe/Lisbon")).hour
             
@@ -44,12 +46,14 @@ def run_bot_loop():
                 continue
 
             current_time = datetime.now(ZoneInfo("Europe/Lisbon")).strftime('%Y-%m-%d %H:%M:%S')
-            
-            # Log explícito do ciclo para aparecer bem claro no Render
             print(f"\n[BOT] [{current_time} PT] A iniciar ronda de verificação na Live Tennis API...", flush=True)
             
-            # Vai buscar os jogos à fonte de dados
-            matches = fetch_live_tennis_matches()
+            # Proteção contra bloqueios na API
+            try:
+                matches = fetch_live_tennis_matches()
+            except Exception as e:
+                print(f"[ERRO] Falha ao comunicar com a Live Tennis API: {e}", flush=True)
+                matches = None
             
             if not matches:
                 print("Nenhum jogo ativo ou dados disponíveis neste ciclo.", flush=True)
@@ -82,16 +86,17 @@ def run_bot_loop():
                             if send_telegram_message(msg):
                                 mark_alert_as_sent(match_id, alert_type, f"Upset set 1: {winner}")
             
-            print(f"Ciclo concluído. A aguardar 8 minutos para a próxima verificação...", flush=True)
-            time.sleep(check_interval)
+            # Cálculo preciso do tempo de espera para garantir exatamente 8 minutos entre inícios de ciclo
+            elapsed_time = time.time() - loop_start_time
+            sleep_time = max(0, check_interval - elapsed_time)
+            
+            print(f"Ciclo concluído em {int(elapsed_time)}s. A aguardar {int(sleep_time)}s para a próxima verificação...", flush=True)
+            time.sleep(sleep_time)
             
     except KeyboardInterrupt:
         print("\n[BOT] Interrupção manual detetada (Ctrl+C). A encerrar o bot de forma segura.", flush=True)
 
 if __name__ == "__main__":
-    # Inicia o mini-servidor web numa thread paralela para cumprir os requisitos do Render
     server_thread = threading.Thread(target=run_web_server, daemon=True)
     server_thread.start()
-    
-    # Arranca o loop principal do bot
     run_bot_loop()
