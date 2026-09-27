@@ -10,6 +10,8 @@ from src.detectors.mto_detector import check_for_mto
 from src.detectors.upset_detector import check_for_first_set_upset
 from src.data_sources.flashscore_client import fetch_live_tennis_matches
 
+print(">>> O FICHEIRO MAIN.PY FOI CARREGADO COM SUCESSO! <<<")
+
 # --- MINI SERVIDOR WEB (Para manter o Render ativo no plano gratuito) ---
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
