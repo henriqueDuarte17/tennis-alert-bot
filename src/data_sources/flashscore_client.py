@@ -22,6 +22,9 @@ def fetch_live_tennis_matches():
                 rank1 = int(getattr(p1_obj, "ranking", 9999) or 9999)
                 rank2 = int(getattr(p2_obj, "ranking", 9999) or 9999)
                 
+                # DIAGNÓSTICO: Imprimir os rankings na consola do Render para validação
+                print(f"[RANK INSPECT] {player1} (Rank: {rank1}) vs {player2} (Rank: {rank2}) [Torneio: {tournament}]", flush=True)
+                
                 score_obj = getattr(item, "score", None)
                 current_set = getattr(score_obj, "current_set", 1) if score_obj else 1
                 sets_data = getattr(score_obj, "sets", []) if score_obj else []
@@ -51,7 +54,7 @@ def fetch_live_tennis_matches():
                     "odds": {
                         "favorite": player1 if rank1 < rank2 else player2,
                         "underdog": player2 if rank1 < rank2 else player1,
-                        "odds_favorite": 1.25, # Estimativa baseada no super-favorito por ranking
+                        "odds_favorite": 1.25,
                         "odds_underdog": 3.50
                     }
                 }
