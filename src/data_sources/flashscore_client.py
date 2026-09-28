@@ -4,8 +4,8 @@ API_KEY = "twjp_d0426f3915422fc340b35cab0bbaa7d9"
 
 def fetch_live_tennis_matches():
     """
-    Recupera os jogos de ténis ao vivo, utilizando diretamente o array de sets 
-    (ex: [1, 0] ou similar) para determinar o fim e o vencedor do 1.º set de forma fiável.
+    Recupera os jogos ao vivo, usando o acumulado de sets [p1_sets, p2_sets] 
+    para determinar com exatidão se o 1.º set já terminou.
     """
     try:
         matches = []
@@ -32,33 +32,21 @@ def fetch_live_tennis_matches():
                 set1_p1, set1_p2 = 0, 0
                 set1_finished = False
                 
-                # Análise direta do array de sets da API (ex: se trouxer os sets ganhos ou pontuações)
-                if sets_data and len(sets_data) > 0:
-                    first_item = sets_data[0]
+                # O sets_data vem como uma lista com os sets ganhos por cada jogador, ex: [0, 1] ou [1, 0] ou [0, 0]
+                if sets_data and isinstance(sets_data, (list, tuple)) and len(sets_data) >= 2:
+                    p1_sets_won = int(sets_data[0] or 0)
+                    p2_sets_won = int(sets_data[1] or 0)
                     
-                    # Se vier em formato de objeto com p1/p2
-                    if hasattr(first_item, "p1") and hasattr(first_item, "p2"):
-                        set1_p1 = int(getattr(first_item, "p1", 0) or 0)
-                        set1_p2 = int(getattr(first_item, "p2", 0) or 0)
-                    elif isinstance(first_item, (list, tuple)) and len(first_item) >= 2:
-                        set1_p1 = int(first_item[0] or 0)
-                        set1_p2 = int(first_item[1] or 0)
-                    elif isinstance(first_item, int):
-                        # Caso a API devolva diretamente os sets ganhos por cada jogador na estrutura
-                        # Ex: sets_data[0] ser os sets do jogador 1 e sets_data[1] do jogador 2
-                        pass
-
-                # REGRA INFALÍVEL DE TÉRMINO DO 1.º SET:
-                # O 1.º set terminou se alguém atingiu 6 ou 7 jogos, OU se já existem 
-                # registos de sets que comprovem que o 1.º set foi concluído.
-                if (set1_p1 >= 6 or set1_p2 >= 6) and abs(set1_p1 - set1_p2) >= 1:
-                    set1_finished = True
-                elif len(sets_data) >= 2:
-                    # Se a API já registou dados para além do primeiro elemento (indicando avanço no marcador global)
-                    set1_finished = True
-
-                # Diagnóstico para acompanhamento nos logs do Render
-                print(f"[SET1 CHECK] {player1} vs {player2} | Placar 1.º Set: {set1_p1}-{set1_p2} | Terminado: {set1_finished} | Sets Data: {sets_data}", flush=True)
+                    # Guardamos estes valores para o detetor saber quem ganhou o 1.º set
+                    set1_p1 = p1_sets_won
+                    set1_p2 = p2_sets_won
+                    
+                    # O 1.º set SÓ terminou se a soma dos sets ganhos for pelo menos 1 (ex: [1, 0] ou [0, 1])
+                    if (p1_sets_won + p2_sets_won) > 0:
+                        set1_finished = True
+                
+                # Log claro para validação em tempo real
+                print(f"[SET1 CHECK] {player1} vs {player2} | Sets Ganhos: {sets_data} | Terminado: {set1_finished}", flush=True)
 
                 formatted_match = {
                     "match_id": match_id,
@@ -67,7 +55,6 @@ def fetch_live_tennis_matches():
                     "player2": player2,
                     "rank1": rank1,
                     "rank2": rank2,
-                    "current_set": 1,
                     "score_summary": str(sets_data),
                     "set1_finished": set1_finished,
                     "set1_p1": int(set1_p1),
