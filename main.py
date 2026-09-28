@@ -5,8 +5,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from src.storage.database import init_db, alert_was_sent, mark_alert_as_sent
 from src.telegram.bot import send_telegram_message
-from src.alerts.formatter import format_mto_alert, format_upset_alert
-from src.detectors.mto_detector import check_for_mto
+from src.alerts.formatter import format_upset_alert
 from src.detectors.upset_detector import check_for_first_set_upset
 from src.data_sources.flashscore_client import fetch_live_tennis_matches
 
@@ -66,22 +65,11 @@ def run_bot_loop():
                     match_id = match.get("match_id")
                     odds_data = match.get("odds", {})
                     
-                    # 1. Verificar Medical Timeout (MTO)
-                    mto_detected, player_affected = check_for_mto(match)
-                    if mto_detected:
-                        alert_type = "MTO"
-                        if not alert_was_sent(match_id, alert_type):
-                            print(f"[ALERTA] MTO detetado para {player_affected} (Jogo: {match_id})", flush=True)
-                            msg = format_mto_alert(match, player_affected)
-                            if send_telegram_message(msg):
-                                mark_alert_as_sent(match_id, alert_type, f"MTO: {player_affected}")
-                    
-                    # 2. Verificar Upset no 1.º Set
+                    # Verificar Upset no 1.º Set (Única prioridade do bot)
                     upset_detected, winner, favorite = check_for_first_set_upset(match, odds_data)
                     if upset_detected:
                         alert_type = "UPSET_SET_1"
                         
-                        # Diagnóstico da Base de Dados
                         ja_enviado = alert_was_sent(match_id, alert_type)
                         print(f"[DB CHECK] Match {match_id} | Alerta {alert_type} já foi enviado antes? {ja_enviado}", flush=True)
                         
