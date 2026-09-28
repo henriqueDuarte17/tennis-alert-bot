@@ -80,15 +80,25 @@ def run_bot_loop():
                     upset_detected, winner, favorite = check_for_first_set_upset(match, odds_data)
                     if upset_detected:
                         alert_type = "UPSET_SET_1"
-                        if not alert_was_sent(match_id, alert_type):
-                            print(f"[ALERTA] Upset detetado! {winner} venceu o 1.º set (Favorito era: {favorite})", flush=True)
+                        
+                        # Diagnóstico da Base de Dados
+                        ja_enviado = alert_was_sent(match_id, alert_type)
+                        print(f"[DB CHECK] Match {match_id} | Alerta {alert_type} já foi enviado antes? {ja_enviado}", flush=True)
+                        
+                        if not ja_enviado:
+                            print(f"[ALERTA] A preparar envio para o Telegram: {winner} venceu o 1.º set (Favorito: {favorite})", flush=True)
                             msg = format_upset_alert(
                                 match, winner, favorite,
                                 odds_data.get("odds_favorite", 1.3),
                                 odds_data.get("odds_underdog", 3.5)
                             )
-                            if send_telegram_message(msg):
+                            
+                            sucesso_envio = send_telegram_message(msg)
+                            print(f"[TELEGRAM CHECK] O envio da mensagem para o Telegram teve sucesso? {sucesso_envio}", flush=True)
+                            
+                            if sucesso_envio:
                                 mark_alert_as_sent(match_id, alert_type, f"Upset set 1: {winner}")
+                                print(f"[DB SUCCESS] Alerta marcado como enviado na base de dados para o jogo {match_id}", flush=True)
             
             # Cálculo preciso do tempo de espera para garantir exatamente 8 minutos entre inícios de ciclo
             elapsed_time = time.time() - loop_start_time
