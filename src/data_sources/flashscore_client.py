@@ -5,7 +5,7 @@ API_KEY = "twjp_d0426f3915422fc340b35cab0bbaa7d9"
 def fetch_live_tennis_matches():
     """
     Recupera os jogos de ténis ao vivo, extraindo os rankings oficiais dos jogadores
-    e o estado/placar do 1.º set.
+    e o estado/placar robusto do 1.º set.
     """
     try:
         matches = []
@@ -35,16 +35,28 @@ def fetch_live_tennis_matches():
                 
                 set1_p1, set1_p2 = 0, 0
                 set1_finished = False
+                
                 if sets_data and len(sets_data) > 0:
-                    set1_p1 = getattr(sets_data[0], "p1", 0)
-                    set1_p2 = getattr(sets_data[0], "p2", 0)
+                    first_set = sets_data[0]
                     
-                    # O 1.º set está terminado se alguém chegou a 6 ou 7 com vantagem
+                    # Tentar extrair por atributos p1/p2 ou por índices/tuplos caso venha em formato de lista
+                    if hasattr(first_set, "p1") and hasattr(first_set, "p2"):
+                        set1_p1 = int(getattr(first_set, "p1", 0) or 0)
+                        set1_p2 = int(getattr(first_set, "p2", 0) or 0)
+                    elif isinstance(first_set, (list, tuple)) and len(first_set) >= 2:
+                        set1_p1 = int(first_set[0] or 0)
+                        set1_p2 = int(first_set[1] or 0)
+                        
+                    # O 1.º set está terminado se alguém chegou a 6 ou 7 com vantagem, ou se já avançámos para o 2.º set ou superior
                     if (set1_p1 >= 6 or set1_p2 >= 6) and abs(set1_p1 - set1_p2) >= 1:
                         set1_finished = True
+                
+                # Salvaguarda adicional: se o jogo já vai no 2.º set ou mais, o 1.º set está obrigatoriamente concluído
+                if current_set > 1:
+                    set1_finished = True
 
-                # Diagnóstico do 1.º set nos logs
-                print(f"[SET1 INSPECT] {player1} vs {player2} | Placar Set 1: [{set1_p1} - {set1_p2}] | Terminado: {set1_finished} | Sets: {sets_data}", flush=True)
+                # Diagnóstico robusto do 1.º set nos logs
+                print(f"[SET1 INSPECT] {player1} vs {player2} | Placar Set 1: [{set1_p1} - {set1_p2}] | Current Set: {current_set} | Terminado: {set1_finished} | Sets: {sets_data}", flush=True)
 
                 formatted_match = {
                     "match_id": match_id,
