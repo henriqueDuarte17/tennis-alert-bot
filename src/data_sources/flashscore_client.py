@@ -4,8 +4,8 @@ API_KEY = "twjp_d0426f3915422fc340b35cab0bbaa7d9"
 
 def fetch_live_tennis_matches():
     """
-    Recupera os jogos ao vivo, usando o acumulado de sets [p1_sets, p2_sets] 
-    para determinar com exatidão se o 1.º set já terminou.
+    Recupera os jogos ao vivo, gerando um ID único e seguro para evitar o estado 'unknown'
+    e utilizando o acumulado de sets [p1_sets, p2_sets] para determinar o fim do 1.º set.
     """
     try:
         matches = []
@@ -13,14 +13,20 @@ def fetch_live_tennis_matches():
             live_list = client.list_matches(status="live")
             
             for item in live_list:
-                match_id = str(getattr(item, "match_id", "unknown"))
-                tournament = getattr(item, "tournament", "Torneio Ténis")
-                
                 p1_obj = getattr(item, "p1", None)
                 p2_obj = getattr(item, "p2", None)
                 
                 player1 = getattr(p1_obj, "name", "Jogador 1") if p1_obj else "Jogador 1"
                 player2 = getattr(p2_obj, "name", "Jogador 2") if p2_obj else "Jogador 2"
+                
+                # Salvaguarda robusta: se o ID vier vazio ou unknown, cria um ID único com os nomes
+                raw_id = getattr(item, "match_id", None)
+                if not raw_id or str(raw_id).lower() == "unknown":
+                    match_id = f"{player1}_{player2}".replace(" ", "_")
+                else:
+                    match_id = str(raw_id)
+                
+                tournament = getattr(item, "tournament", "Torneio Ténis")
                 
                 # Extrair rankings
                 rank1 = int(getattr(p1_obj, "ranking", 9999) or 9999)
@@ -37,7 +43,6 @@ def fetch_live_tennis_matches():
                     p1_sets_won = int(sets_data[0] or 0)
                     p2_sets_won = int(sets_data[1] or 0)
                     
-                    # Guardamos estes valores para o detetor saber quem ganhou o 1.º set
                     set1_p1 = p1_sets_won
                     set1_p2 = p2_sets_won
                     
@@ -45,8 +50,8 @@ def fetch_live_tennis_matches():
                     if (p1_sets_won + p2_sets_won) > 0:
                         set1_finished = True
                 
-                # Log claro para validação em tempo real
-                print(f"[SET1 CHECK] {player1} vs {player2} | Sets Ganhos: {sets_data} | Terminado: {set1_finished}", flush=True)
+                # Log limpo para validação em tempo real
+                print(f"[SET1 CHECK] {player1} vs {player2} | ID: {match_id} | Sets Ganhos: {sets_data} | Terminado: {set1_finished}", flush=True)
 
                 formatted_match = {
                     "match_id": match_id,
