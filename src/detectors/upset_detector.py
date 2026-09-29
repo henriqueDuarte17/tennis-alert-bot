@@ -1,12 +1,12 @@
 def check_for_first_set_upset(match, odds_data):
     """
-    Verifica se houve um upset no 1.º set, filtrando e ignorando torneios fracos (ITFs, etc.).
+    Verifica se houve um upset no 1.º set, filtrando e ignorando torneios fracos 
+    (ITFs, W15, UTR, etc.).
     """
-    # 1. FILTRAGEM DE TORNEIOS: Ignorar torneios abaixo de Challenger (ITFs, W15, M15, etc.)
+    # 1. FILTRAGEM DE TORNEIOS: Ignorar ITFs, W15-W100, M15-M35 e torneios UTR
     tournament = match.get("tournament", "").upper()
     
-    # Termos a excluir
-    termos_proibidos = ["ITF", "W15", "W25", "W35", "W50", "W75", "W100", "M15", "M25", "M35"]
+    termos_proibidos = ["ITF", "UTR", "W15", "W25", "W35", "W50", "W75", "W100", "M15", "M25", "M35"]
     if any(termo in tournament for termo in termos_proibidos):
         return False, None, None
 
